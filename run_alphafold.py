@@ -288,7 +288,7 @@ _FORCE_OUTPUT_DIR = flags.DEFINE_bool(
 _MAX_MSA = flags.DEFINE_integer(
     'max_msa',
     16384,
-    'Maximum number of MSA size (default: 16384).',
+    'Maximum number of MSA size.',
     lower_bound=1,
 )
 
@@ -299,7 +299,7 @@ _FIT_ALL = flags.DEFINE_bool(
     'Whether to use all chains for computing the biasing forces. When True,'
     'all chains are used for the superimposition and RMSD calculation, and biasing'
     'forces are applied to all chains. When False, specify the chain IDs with'
-    '`--fit_chain`. (Default: True)',
+    '--fit_chain.',
 )
 _FIT_CHAIN = flags.DEFINE_list(
     'fit_chain',
@@ -313,45 +313,45 @@ _N_SMOOTH = flags.DEFINE_integer(
     10,
     'Integer specifying the number of neighboring residues to average the biasing forces.'
     'The averaging includes n residues on each side plus the residue itself (a total of'
-    '2n + 1 residues). (Default: 10)',
+    '2n + 1 residues).',
     lower_bound=0,
 )
 _BIAS_SIGMA = flags.DEFINE_float(
     'bias_sigma',
     2.0,
-    'Width of the Gaussian potential. (Default: 2.0)',
+    'Width of the Gaussian potential.',
     lower_bound=0.1,
 )
 _BIAS_WEIGHT = flags.DEFINE_float(
     'bias_weight',
     100.0,
-    'Strength of the Gaussian potential. (Default: 100.0)',
+    'Strength of the Gaussian potential.',
     lower_bound=0.0,
 )
 _BIAS_TMIN = flags.DEFINE_float(
     'bias_tmin',
     2.0,
     'Noise level threshold for applying biasing forces. When the noise level falls below'
-    'this value, no biasing force is applied. (Default: 2.0)',
+    'this value, no biasing force is applied.',
     lower_bound=0.0,
 )
 _BIAS_RESTRICT = flags.DEFINE_bool(
     'bias_restrict',
     True,
     'Whether to restrict biasing forces to structures within a certain RMSD threshold'
-    'from the structures generated using the first random seed. (Default: True)',
+    'from the structures generated using the first random seed.',
 )
 _CUT_RMSD = flags.DEFINE_float(
     'cut_rmsd',
     0.5,
     'RMSD cutoff (Å) that defines the vicinity for applying biasing forces.'
-    'Only effective when --bias_restrict is True. (Default: 0.5)',
+    'Only effective when --bias_restrict is True.',
     lower_bound=0.0,
 )
 _PLDDT_MIN = flags.DEFINE_float(
     'plddt_min',
     60.0,
-    'Minimum pLDDT threshold for applying biasing forces to residues. (Default: 60.0)',
+    'Minimum pLDDT threshold for applying biasing forces to residues.',
     lower_bound=0.0,
 )
 
