@@ -1,4 +1,5 @@
 # AF3-ReD
+[![DOI](https://zenodo.org/badge/1111663893.svg)](https://doi.org/10.5281/zenodo.17985924)
 
 AlphaFold 3 with Repulsive bias in the Diffusion generative model (AF3-ReD). AF3-ReD introduces a repulsive biasing potential between predicted structures during the denoising process of the diffusion model in AlphaFold3 (AF3), enabling the diffusion model to explore wider conformational space.
 
