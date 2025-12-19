@@ -84,11 +84,15 @@ AF3-ReD also allows users to modify the maximum number of MSA sequences (i.e., M
 If you use AF3-ReD in your research, please cite the following paper as well as [the original AF3 paper](https://doi.org/10.1038/s41586-024-07487-w):
 
 ```bibtex
-@article{Ohnuki2025,
-  author  = {Ohnuki, Jun and Okazaki, Kei-ichi},
-  journal = {BioRxiv},
-  title   = {Enhanced sampling of protein conformations in AlphaFold3 with repulsive bias in the diffusion generative model},
-  year    = {2025},
-  doi     = {}
+@article {Ohnuki2025,
+	author = {Ohnuki, Jun and Okazaki, Kei-ichi},
+	title = {Enhanced sampling of protein conformations in AlphaFold3 with repulsive bias in the diffusion generative model},
+	elocation-id = {2025.12.17.693105},
+	year = {2025},
+	doi = {10.64898/2025.12.17.693105},
+	publisher = {Cold Spring Harbor Laboratory},
+	URL = {https://www.biorxiv.org/content/early/2025/12/18/2025.12.17.693105},
+	eprint = {https://www.biorxiv.org/content/early/2025/12/18/2025.12.17.693105.full.pdf},
+	journal = {bioRxiv}
 }
 ```
