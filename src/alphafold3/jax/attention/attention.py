@@ -14,9 +14,7 @@ import typing
 from typing import Literal, TypeAlias
 
 from alphafold3.jax.attention import attention_base as base
-from alphafold3.jax.attention import flash_attention as attention_triton
 from alphafold3.jax.attention import xla_attention
-from alphafold3.jax.common import triton_utils
 import jax
 from jax.typing import DTypeLike  # pylint: disable=g-importing-member
 import jaxtyping
@@ -24,6 +22,7 @@ from jaxtyping import Array  # pylint: disable=g-importing-member
 from jaxtyping import Bool  # pylint: disable=g-importing-member
 from jaxtyping import Float  # pylint: disable=g-importing-member
 import typeguard
+import tokamax
 
 Implementation: TypeAlias = Literal["cudnn", "xla", "triton"]
 
@@ -111,29 +110,27 @@ def dot_product_attention(
         implementation="cudnn",
     )
 
-  logits_dtype = base.AUTO if logits_dtype is None else logits_dtype
-  precision = jax.lax.Precision.DEFAULT if precision is None else precision
-
-  args = (query, key, value)
-  kwargs = dict(
-      precision=precision,
-      logits_dtype=logits_dtype,
-      bias=bias,
-      mask=mask,
-  )
-
-  if implementation == "triton":
-    if not triton_utils.has_triton_support():
-      raise ValueError(
-          "implementation='triton' for FlashAttention is unsupported on this"
-          " GPU generation. Please use implementation='xla' instead."
+  # Blackwell port: use the maintained kernel API, not the old JAX-Triton FFI.
+  # Legacy precision tuples describe TWO dot products, not the two operands
+  # of a single JAX dot. Retain the reference path for these advanced options.
+  if logits_dtype is not None or precision is not None:
+    if implementation == "triton":
+      raise NotImplementedError(
+          "Explicit logits_dtype/precision require implementation='xla' "
+          "in this compatibility port."
       )
-    return attention_triton.TritonFlashAttention()(*args, **kwargs)
+    return xla_attention.XlaDotProductAttention()(
+        query, key, value,
+        precision=jax.lax.Precision.DEFAULT if precision is None else precision,
+        logits_dtype=base.AUTO if logits_dtype is None else logits_dtype,
+        bias=bias, mask=mask,
+    )
 
-  if implementation is None and triton_utils.has_triton_support():
-    try:
-      return attention_triton.TritonFlashAttention()(*args, **kwargs)
-    except Exception:  # pylint: disable=broad-exception-caught
-      pass  # Fallback to XLA.
-
-  return xla_attention.XlaDotProductAttention()(*args, **kwargs)
+  # Tokamax requires bias to have all batch axes; the old API accepted
+  # a shared [heads, queries, keys] bias. Preserve that broadcasting contract.
+  if bias is not None:
+    bias = bias.reshape((1,) * (query.ndim - bias.ndim) + bias.shape)
+  return tokamax.dot_product_attention(
+      query, key, value, bias=bias, mask=mask,
+      implementation=implementation,
+  )

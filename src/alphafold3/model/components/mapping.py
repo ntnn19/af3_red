@@ -110,10 +110,6 @@ def sharded_apply(
   Returns:
     Function with smap applied.
   """
-  docstr = (
-      "Mapped version of {fun}. Takes similar arguments to {fun} "
-      "but with additional array axes over which {fun} is mapped."
-  )
   if new_out_axes:
     raise NotImplementedError("New output axes not yet implemented.")
 
@@ -121,7 +117,8 @@ def sharded_apply(
   if shard_size is None:
     return fun
 
-  @jax.util.wraps(fun, docstr=docstr)
+  # Blackwell port: jax.util.wraps was removed; use the public Python API.
+  @functools.wraps(fun)
   def mapped_fn(*args, **kwargs):
     # Expand in axes and determine loop range.
     in_axes_ = _expand_axes(in_axes, args)

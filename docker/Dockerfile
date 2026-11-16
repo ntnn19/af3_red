@@ -8,40 +8,40 @@
 # if received directly from Google. Use is subject to terms of use available at
 # https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md
 
-FROM nvidia/cuda:12.6.0-base-ubuntu22.04
+# Blackwell port: CUDA 12.9 host image, Python 3.12, and pip CUDA libraries.
+FROM nvidia/cuda:12.9.0-base-ubuntu24.04
 
 # Some RUN statements are combined together to make Docker build run faster.
-# Get latest package listing, install software-properties-common, git, wget,
+# Get latest package listing, install Python, git, wget,
 # compilers and libraries.
 # git is required for pyproject.toml toolchain's use of CMakeLists.txt.
 # gcc, g++, make are required for compiling hmmer and AlphaFold 3 libaries.
 # zlib is a required dependency of AlphaFold 3.
-RUN apt update --quiet \
-    && apt install --yes --quiet software-properties-common \
-    && apt install --yes --quiet git wget gcc g++ make zlib1g-dev zstd
+RUN apt-get update --quiet \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --yes --quiet \
+       ca-certificates git wget gcc g++ make zlib1g-dev zstd \
+       python3.12 python3.12-venv python3.12-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Get apt repository of specific Python versions. Then install Python. Tell APT
-# this isn't an interactive TTY to avoid timezone prompt when installing.
-RUN add-apt-repository ppa:deadsnakes/ppa \
-    && DEBIAN_FRONTEND=noninteractive apt install --yes --quiet python3.11 python3-pip python3.11-venv python3.11-dev
-RUN python3.11 -m venv /alphafold3_venv
+# Use Ubuntu's Python 3.12 and a version-pinned package installer.
+COPY --from=ghcr.io/astral-sh/uv:0.9.24 /uv /uvx /bin/
+RUN python3.12 -m venv /alphafold3_venv
 ENV PATH="/hmmer/bin:/alphafold3_venv/bin:$PATH"
-# Update pip to the latest version. Not necessary in Docker, but good to do when
-# this is used as a recipe for local installation since we rely on new pip
-# features for secure installs.
-RUN pip3 install --upgrade pip
+# Keep image size down and bound native build parallelism.
+ENV UV_NO_CACHE=1
+ENV CMAKE_BUILD_PARALLEL_LEVEL=4
 
 # Install HMMER. Do so before copying the source code, so that docker can cache
 # the image layer containing HMMER. Alternatively, you could also install it 
 # using `apt-get install hmmer` instead of bulding it from source.
-RUN mkdir /hmmer_build /hmmer ; \
-    wget http://eddylab.org/software/hmmer/hmmer-3.4.tar.gz --directory-prefix /hmmer_build ; \
-    (cd /hmmer_build && tar zxf hmmer-3.4.tar.gz && rm hmmer-3.4.tar.gz) ; \
-    (cd /hmmer_build/hmmer-3.4 && ./configure --prefix /hmmer) ; \
-    (cd /hmmer_build/hmmer-3.4 && make -j8) ; \
-    (cd /hmmer_build/hmmer-3.4 && make install) ; \
-    (cd /hmmer_build/hmmer-3.4/easel && make install) ; \
-    rm -R /hmmer_build
+RUN mkdir /hmmer_build /hmmer \
+    && wget https://eddylab.org/software/hmmer/hmmer-3.4.tar.gz --directory-prefix /hmmer_build \
+    && (cd /hmmer_build && tar zxf hmmer-3.4.tar.gz && rm hmmer-3.4.tar.gz) \
+    && (cd /hmmer_build/hmmer-3.4 && ./configure --prefix /hmmer) \
+    && (cd /hmmer_build/hmmer-3.4 && make -j4) \
+    && (cd /hmmer_build/hmmer-3.4 && make install) \
+    && (cd /hmmer_build/hmmer-3.4/easel && make install) \
+    && rm -R /hmmer_build
 
 # Copy the AlphaFold 3 source code from the local machine to the container and
 # set the working directory to there.
@@ -49,8 +49,10 @@ COPY . /app/alphafold
 WORKDIR /app/alphafold
 
 # Install the Python dependencies AlphaFold 3 needs.
-RUN pip3 install -r dev-requirements.txt
-RUN pip3 install --no-deps .
+RUN uv pip install --python /alphafold3_venv/bin/python \
+    --require-hashes -r requirements.txt
+RUN uv pip install --python /alphafold3_venv/bin/python --no-deps .
+RUN uv pip check --python /alphafold3_venv/bin/python
 # Build chemical components database (this binary was installed by pip).
 RUN build_data
 
@@ -64,5 +66,8 @@ ENV XLA_FLAGS="--xla_gpu_enable_triton_gemm=false"
 # Memory settings used for folding up to 5,120 tokens on A100 80 GB.
 ENV XLA_PYTHON_CLIENT_PREALLOCATE=true
 ENV XLA_CLIENT_MEM_FRACTION=0.95
+# Do not set LD_LIBRARY_PATH to an old system CUDA/cuDNN installation.
+# Persist this directory with a Docker volume only on trusted hosts.
+ENV JAX_COMPILATION_CACHE_DIR=/root/.cache/af3
 
 CMD ["python3", "run_alphafold.py"]

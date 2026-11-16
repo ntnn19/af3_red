@@ -1,5 +1,10 @@
 # For RCCS users
 
+> **Historical configuration:** these cluster-specific Python 3.11 /
+> JAX 0.4.34 / Triton pins are not compatible with this Blackwell port.
+> Use the [Blackwell Docker guide](../docs/blackwell.md) for the supported
+> installation path. These RCCS examples have not been ported or validated.
+
 The following shows how to install and run AF3-ReD on Research Center for Computational Science, Okazaki, Japan.
 
 ## Installation

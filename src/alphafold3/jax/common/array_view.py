@@ -10,6 +10,7 @@
 
 """Array view class and utilities."""
 
+# Blackwell port: use the public JAX 0.9 x64 context manager.
 from collections.abc import Sequence
 import dataclasses
 import math
@@ -100,7 +101,7 @@ class ArrayView:
   @property
   def offsets(self) -> jax.Array:
     """Returns array of offsets into `base` for each element."""
-    with jax.experimental.enable_x64():
+    with jax.enable_x64():
       idxs = jnp.indices(self.shape, sparse=True, dtype=self._index_dtype)
       return self.offset + sum(s * idx for s, idx in zip(self.strides, idxs))
 
@@ -262,7 +263,7 @@ class ArrayView:
 
     shape = []
     strides = []
-    with jax.experimental.enable_x64():
+    with jax.enable_x64():
 
       def as_index(x):
         return x.astype(self._index_dtype) if isinstance(x, jax.Array) else x

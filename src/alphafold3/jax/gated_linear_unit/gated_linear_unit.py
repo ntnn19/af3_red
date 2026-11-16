@@ -14,32 +14,13 @@ from collections.abc import Callable
 import typing
 from typing import Literal, TypeAlias
 
-from alphafold3.jax.common import array_view
-from alphafold3.jax.common import triton_utils
-from alphafold3.jax.gated_linear_unit import gated_linear_unit_base
-from alphafold3.jax.gated_linear_unit import matmul_ext
 import jax
 import jaxtyping
 from jaxtyping import Array, Float  # pylint: disable=g-importing-member,g-multiple-import
 import typeguard
+import tokamax
 
 Implementation: TypeAlias = Literal['xla', 'triton']
-
-
-class PallasGatedLinearUnit(gated_linear_unit_base.GatedLinearUnit):
-  """Pallas gated linear unit."""
-
-  def _fwd(self, x, weight, *, activation, precision):
-    weight_view = array_view.ArrayView(weight)
-    return self.apply_vmap_rule_forward(
-        matmul_ext.gated_linear_unit,
-        activation=activation,
-        precision=precision,
-    )(
-        x,
-        weight_view[:, 1],
-        weight_view[:, 0],
-    )
 
 
 @jaxtyping.jaxtyped(typechecker=typeguard.typechecked)
@@ -80,13 +61,6 @@ def gated_linear_unit(
     The output array.
   """
 
-  match implementation:
-    case 'triton':
-      if not triton_utils.has_triton_support():
-        raise NotImplementedError('Triton not supported on this platform.')
-    case _:
-      ...
-
   if x.dtype.name != weight.dtype.name:
     raise ValueError(
         f'Input and weight must have the same dtype. {x.dtype} !='
@@ -100,25 +74,11 @@ def gated_linear_unit(
           f'Unsupported named implementation. Must be one of {named_args}.'
       )
 
-  if implementation is None or implementation == 'triton':
-    try:
-      return PallasGatedLinearUnit()(
-          x=x,
-          weight=weight,
-          activation=activation,
-          precision=precision,
-      )
-      # When `implementation=None`, we must catch any exception, and use XLA
-      # as a fallback. As we rely on a third-party library (Triton), it might
-      # not be possible to enumerate all possible exceptions that could be
-      # thrown, hence catching the broadest possible one.
-    except Exception as e:  # pylint: disable=broad-exception-caught
-      if implementation == 'triton':
-        raise e
-
-  return gated_linear_unit_base.gated_linear_unit_xla(
+  # Blackwell port: packed weights keep [gate, projection] order and names.
+  return tokamax.gated_linear_unit(
       x=x,
-      weight=weight,
+      weights=weight,
       activation=activation,
       precision=precision,
+      implementation=implementation,
   )

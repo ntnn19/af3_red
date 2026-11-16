@@ -4,35 +4,40 @@ requires = [
     "pybind11",
     "cmake>=3.28",
     "ninja",
-    "numpy",
+    "numpy==2.1.3",
 ]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "alphafold3"
 version = "3.0.1"
-requires-python = ">=3.11"
+requires-python = ">=3.12,<3.13"
 readme = "README.md"
 license = {file = "LICENSE"}
 dependencies = [
-    "absl-py",
+    "absl-py>=2.3.1",
     "chex",
-    "dm-haiku==0.0.13",
+    "dm-haiku==0.0.16",
     "dm-tree",
-    "jax==0.4.34",
-    "jax[cuda12]==0.4.34",
-    "jax-triton==0.2.0",
-    "jaxtyping==0.2.34",
-    "numpy",
+    "jax[cuda12]==0.9.1",
+    # SM 12.0 needs a Blackwell-capable toolchain AND runtime libraries.
+    "nvidia-cublas-cu12>=12.8",
+    "nvidia-cuda-cupti-cu12>=12.8",
+    "nvidia-cuda-nvcc-cu12>=12.8",
+    "nvidia-cuda-runtime-cu12>=12.8",
+    "nvidia-cudnn-cu12>=9.8",
+    "nvidia-nvjitlink-cu12>=12.8",
+    "jaxtyping>=0.3",
+    "numpy==2.1.3",
     "rdkit==2024.3.5",
-    "triton==3.1.0",
+    "tokamax==0.0.11",
     "tqdm",
     "typeguard==2.13.3",
     "zstandard",
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=6.0"]
+test = ["pytest>=8,<9"]
 
 [tool.scikit-build]
 wheel.exclude = [

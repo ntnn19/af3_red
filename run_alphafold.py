@@ -37,6 +37,7 @@ from typing import overload
 from absl import app
 from absl import flags
 from alphafold3.common import folding_input
+from alphafold3.common import gpu_compatibility
 from alphafold3.common import resources
 from alphafold3.constants import chemical_components
 import alphafold3.cpp
@@ -835,17 +836,29 @@ def main(_):
 
   if _RUN_INFERENCE.value:
     # Fail early on incompatible devices, but only if we're running inference.
-    gpu_devices = jax.local_devices(backend='gpu')
+    try:
+      gpu_devices = jax.local_devices(backend='gpu')
+    except RuntimeError as exc:
+      raise RuntimeError(
+          'CUDA initialization failed. Check the host NVIDIA driver, '
+          'NVIDIA Container Toolkit, docker run --gpus all, and the '
+          'Blackwell setup guide in docs/blackwell.md.'
+      ) from exc
+    selected_gpu = gpu_compatibility.select_gpu(gpu_devices, _GPU_DEVICE.value)
     if gpu_devices:
-      compute_capability = float(
-          gpu_devices[_GPU_DEVICE.value].compute_capability
+      compute_capability = gpu_compatibility.compute_capability(
+          selected_gpu.compute_capability
       )
-      if compute_capability < 6.0:
+      print(
+          f'GPU: {selected_gpu.device_kind}; CUDA compute capability '
+          f'{compute_capability[0]}.{compute_capability[1]}; JAX {jax.__version__}'
+      )
+      if compute_capability < (6, 0):
         raise ValueError(
             'AlphaFold 3 requires at least GPU compute capability 6.0 (see'
             ' https://developer.nvidia.com/cuda-gpus).'
         )
-      elif 7.0 <= compute_capability < 8.0:
+      elif (7, 0) <= compute_capability < (8, 0):
         xla_flags = os.environ.get('XLA_FLAGS')
         required_flag = '--xla_disable_hlo_passes=custom-kernel-fusion-rewriter'
         if not xla_flags or required_flag not in xla_flags:

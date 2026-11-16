@@ -7,6 +7,16 @@ AF3-ReD is a derivative work of AF3, which is distributed under the Creative Com
 
 ## Usage
 
+### RTX PRO 6000 Blackwell compatibility port
+
+For this modified tree, follow [the Blackwell Docker guide](docs/blackwell.md)
+rather than the historical installation commands below. It uses Python 3.12,
+JAX 0.9.1, Haiku 0.0.16, Tokamax 0.0.11, and CUDA 12.9.
+The AF3-ReD bias/diffusion implementation and model parameter layout are
+preserved. CPU regression checks and the native extension build passed;
+Docker execution and actual Blackwell inference still require validation
+on your host. Start with the included no-weights GPU smoke test.
+
 How to install and run AF3-ReD is essentially the same as the original AF3. For instruction, please refer to [the AF3 repository](https://github.com/google-deepmind/alphafold3).
 
 > [!NOTE]   

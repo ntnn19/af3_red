@@ -1,5 +1,9 @@
 # Installation and Running Your First Prediction
 
+> **Blackwell port:** this page retains historical upstream instructions.
+> For the modified Docker environment, use [blackwell.md](blackwell.md).
+> Do not use the older CUDA/driver examples below for an RTX PRO Blackwell.
+
 You will need a machine running Linux; AlphaFold 3 does not support other
 operating systems. Full installation requires up to 1 TB of disk space to keep
 genetic databases (SSD storage is recommended) and an NVIDIA GPU with Compute
