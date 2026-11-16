@@ -49,6 +49,7 @@ COPY . /app/alphafold
 WORKDIR /app/alphafold
 
 # Install the Python dependencies AlphaFold 3 needs.
+ENV UV_HTTP_TIMEOUT=600
 RUN uv pip install --python /alphafold3_venv/bin/python \
     --require-hashes -r requirements.txt
 RUN uv pip install --python /alphafold3_venv/bin/python --no-deps .
