@@ -9,7 +9,7 @@
 # https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md
 
 # Blackwell port: CUDA 12.9 host image, Python 3.12, and pip CUDA libraries.
-FROM nvidia/cuda:12.9.0-base-ubuntu24.04
+FROM docker.io/nvidia/cuda:12.9.0-base-ubuntu24.04
 
 # Some RUN statements are combined together to make Docker build run faster.
 # Get latest package listing, install Python, git, wget,
